@@ -1,0 +1,43 @@
+<html>
+<head>
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    function home() {
+      document.getElementById('menu').style.display = 'block';
+      document.getElementById('lunch').style.display = 'none';
+      document.getElementById('play').style.display = 'none';
+    }
+    function lunch() {
+      responsiveVoice.speak('Beber o comer', 'Spanish Female');
+      document.getElementById('menu').style.display = 'none';
+      document.getElementById('lunch').style.display = 'block';
+    }
+    function play() {
+      responsiveVoice.speak('Jugar', 'Spanish Female');
+      document.getElementById('menu').style.display = 'none';
+      document.getElementById('play').style.display = 'block';
+    }
+  </script>
+</head>
+<body>
+  <ul id="menu" class="grid">
+    <li><a href="#" onclick="lunch()"><img src="pics/lunch.png"/></a></li>
+    <li><a href="#" onclick="responsiveVoice.speak('Pipi o caca', 'Spanish Female')"><img src="pics/wc.png"/></a></li>
+    <li><a href="#" onclick="play()"><img src="pics/play.png"/></a></li>
+    <li><a href="#" onclick="responsiveVoice.speak('Salir a la calle', 'Spanish Female')"><img src="pics/goout.png"/></a></li>
+  </ul>
+  <ul id="lunch" class="grid">
+    <li><a href="#" onclick="responsiveVoice.speak('Beber', 'Spanish Female')"><img src="pics/glass.png"/></a></li>
+    <li><a href="#" onclick="responsiveVoice.speak('Patatas', 'Spanish Female')"><img src="pics/chips.png"/></a></li>
+    <li><a href="#" onclick="responsiveVoice.speak('Comer', 'Spanish Female')"><img src="pics/sandwich.png"/></a></li>
+    <li><a href="index.html"><img src="pics/no.png"/></a></li>
+  </ul>
+  <ul id="play" class="grid">
+    <li><a href="#" onclick="responsiveVoice.speak('Coche', 'Spanish Female')"><img src="pics/car.png"/></a></li>
+    <li><a href="#" onclick="responsiveVoice.speak('Piano', 'Spanish Female')"><img src="pics/piano.png"/></a></li>
+    <li><a href="#" onclick="responsiveVoice.speak('Dibujos', 'Spanish Female')"><img src="pics/ipad.png"/></a></li>
+    <li><a href="index.html"><img src="pics/no.png"/></a></li>
+  </ul>
+</body>
+<script src="voice.js"></script>
+</html>
