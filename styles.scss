@@ -1,4 +1,7 @@
 
+$admin-blue: #1f99c9;
+$selected-blue: #1f99c981;
+
 body {
   margin: 0;
   font-family: Hind;
@@ -20,7 +23,7 @@ body {
         position: relative;
 
         &.selected {
-          background-color: #1f99c981;
+          background-color: $selected-blue;
         }
         
         img {
@@ -31,38 +34,37 @@ body {
           max-height: 80%;
         }
         
-        div.edit,
-        div.add {
+        ul.admin {
           display: none;
           position: absolute;
-          width: 48px;
-          height: 48px;
-          border-radius: 24px;
-          color: white;
-          font-size: 1.8em;
           top: 48px;
-          background-color: #1f99c9;
-          padding-top: -10px;
-          cursor: pointer;
-
-          img {
-            width: 24px;
-            height: 24px;
-          }
-        }
-        
-        div.edit {
           right: 48px;
-        }
-        div.add {
-          right: 110px;
+
+          li {
+            width: auto;
+            height: auto;
+            max-height: 46px;
+            border: none;
+            border-radius: 23px;
+            background-color: $admin-blue;
+            padding: 8px 20px 6px 20px;
+            margin: 0 0 20px 20px;
+            font-size: 1.2em;
+            color: white;
+            cursor: pointer;
+            
+            img {
+              width: 24px;
+              height: 24px;
+            }
+          }
         }
       }
     }
   }
   
   #control {
-    background-color: #1f99c9;
+    background-color: $admin-blue;
     border-radius: 34px;
     position: fixed;
     margin: auto;
@@ -105,8 +107,7 @@ body {
   
   &.editing {
 
-    div.edit,
-    div.add {
+    ul.admin {
       display: inline !important;
     }
 

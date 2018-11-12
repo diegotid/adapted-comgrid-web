@@ -1,4 +1,5 @@
 
+var gridURL = null;
 var gridJSON = null;
 var voiceLang = 'Spanish Female';
 
@@ -6,7 +7,8 @@ var apiURL = 'https://www.googleapis.com/customsearch/v1';
 var apiKey = 'AIzaSyCNPpm7l0ux6guKdP04mVtOKDc0ta7rlaI';
 var cseId = '000035554816196296110:duvthbrcfcm';
 
-function setupGrid(gridURL) {
+function setupGrid(url) {
+    gridURL = url;
     if (!gridJSON) {
         var request = new XMLHttpRequest();
         request.onreadystatechange = function() {
@@ -31,57 +33,125 @@ function setupGrid(gridURL) {
     setupSelect();
 }
 
-function fillGrid(json) {
+function reloadGrid(node) {
+    var request = new XMLHttpRequest();
+    request.onreadystatechange = function() {
+        if (request.readyState == 4 && request.status == 200) {
+            gridJSON = JSON.parse(request.responseText);
+            var json = findNode(gridJSON, node);
+            if (json != null) {
+                fillGrid(json);
+            }
+        }
+    }
+    request.open('GET', gridURL);
+    request.send();
+}
+
+function findNode(json, id) {
+    var node = null;
+    if (json['id'] == id) {
+        return json;
+    }
+    if (json['items']) {
+        json['items'].forEach(function(item) {
+            var sub = findNode(item, id);
+            if (sub != null) {
+                node = sub;
+            }
+        });
+    }
+    return node;
+}
+
+function fillGrid(json, page) {
+    if (!page) page = 1;
+    var path = json['id'].split('-');
+    path.pop();
+    console.log('Page: ' + page);
+    console.log('Items length: ' + json['items'].length);
+    console.log('Path length: ' + path.length);
     document.querySelector('#parent').value = json['id'];
     var grid = document.querySelector('.grid');
     grid.innerHTML = '';
-    json['items'].forEach(function(item) {
-        var li = document.createElement('li');
-        var a = document.createElement('a');
-        var img = document.createElement('img');
-        img.src = item['pic'];
-        a.appendChild(img);
-        li.appendChild(a);
-        li.id = item['id'];
-        grid.appendChild(li);
-        a.addEventListener('click', function(e) {
-            responsiveVoice.speak(item['title'], voiceLang);
-            if (item['items']) {
-                fillGrid(item);
+    if (json['items']) {
+        var i = 0;
+        json['items'].forEach(function(item) {
+            i++;
+            if (i <= 3 * (page - 1)) {
+                return; // continue forEach to reach the page
             }
+            if (i > 3 * page && (path.length > 0 || json['items'].length > 4)) {
+                return; // continue forEach not to show non visible items
+            }
+            var a = document.createElement('a');
+            var li = document.createElement('li');
+            var img = document.createElement('img');
+            img.src = item['pic'];
+            a.appendChild(img);
+            li.appendChild(a);
+            li.id = item['id'];
+            grid.appendChild(li);
+            a.addEventListener('click', function(e) {
+                responsiveVoice.speak(item['title'], voiceLang);
+                if (item['items']) {
+                    fillGrid(item);
+                }
+            });
+            var admin = document.createElement('ul');
+            admin.classList.add('admin');
+            li.appendChild(admin);
+            var edit = document.createElement('li');
+            edit.innerText = 'cambiar';
+            edit.addEventListener('click', function() {
+                showSelectPic(item);
+            });
+            admin.appendChild(edit);
+            var add = document.createElement('li');
+            if (item['items']) {
+                if (item['items'].length > 0) {
+                    add.innerText = item['items'].length + ' opciones';
+                    add.addEventListener('click', function() {
+                        fillGrid(item);
+                    });
+                } else {
+                    add.innerText = 'añadir opciones';
+                    add.addEventListener('click', function() {
+                        treeUntree(item, true);
+                    });
+                    treeUntree(item, false);
+                }
+            } else {
+                add.innerText = 'añadir opciones';
+                add.addEventListener('click', function() {
+                    treeUntree(item, true);
+                });
+            }
+            admin.appendChild(add);
+            var remove = document.createElement('li');
+            remove.innerText = 'eliminar';
+            remove.addEventListener('click', function() {
+                removeNode(item);
+            });
+            admin.appendChild(remove);
         });
-        var edit = document.createElement('div');
-        var pen = document.createElement('img');
-        pen.src = 'edit.png';
-        edit.appendChild(pen);
-        edit.classList.add('edit');
-        li.appendChild(edit);
-        pen.addEventListener('click', function() {
-            showSelectPic(item);
-        });
-        var add = document.createElement('div');
-        var tree = document.createElement('img');
-        if (item['items']) {
-            tree.src = 'untree.png';
-        } else {
-            tree.src = 'tree.png';
-        }
-        add.appendChild(tree);
-        add.classList.add('add');
-        li.appendChild(add);
-        tree.addEventListener('click', function() {
-            treeUntree(item);
-        });
-    });
-    var path = json['id'].split('-');
-    path.pop();
-    document.querySelector('#add').disabled = true;
-    for (var i = grid.childNodes.length + (path.length > 0 ? 1 : 0); i < 4; i++) {
-        document.querySelector('#add').disabled = false;
+    }
+    for (var i = grid.childNodes.length; i < 4 - (json['items'].length > 3 * page || path.length > 0 || page > 1) ? 1 : 0; i++) {
         var li = document.createElement('li');
         grid.appendChild(li);
     }
-    if (path.length > 0) {
+    if (json['items'].length > 3 * page) {
+        var a = document.createElement('a');
+        var li = document.createElement('li');
+        var img = document.createElement('img');
+        img.src = '/comgrid/pics/next.png';
+        a.appendChild(img);
+        a.addEventListener('click', function(e) {
+            fillGrid(json, page + 1);
+        });
+        li.appendChild(a);
+        grid.appendChild(li);
+    } else if (path.length > 0 || page > 1) {
         var back = null;
         path.forEach(function(index) {
             if (!back) {
@@ -90,16 +160,22 @@ function fillGrid(json) {
                 back = back['items'][index];
             }
         });
-        var li = document.createElement('li');
         var a = document.createElement('a');
+        var li = document.createElement('li');
         var img = document.createElement('img');
         img.src = '/comgrid/pics/no.png';
         a.appendChild(img);
+        if (path.length > 0) {
+            a.addEventListener('click', function(e) {
+                fillGrid(back);
+            });
+        } else {
+            a.addEventListener('click', function(e) {
+                fillGrid(json);
+            });
+        }
         li.appendChild(a);
         grid.appendChild(li);
-        a.addEventListener('click', function(e) {
-            fillGrid(back);
-        });
     }
 }
 
@@ -133,21 +209,38 @@ function showAddPic() {
     document.querySelector('#select').classList.add('active');
 }
 
-function treeUntree(item) {
+function treeUntree(item, follow) {
     var selected = encodeURIComponent(item['id']);
     var request = new XMLHttpRequest();
-    request.onreadystatechange = function() {
-        if (request.readyState == 4 && request.status == 200) {
-            if (item['items']) {
-                location.reload();
-            } else {
-                item['items'] = [];
+    if (follow) {
+        request.onreadystatechange = function() {
+            if (request.readyState == 4 && request.status == 200) {
                 fillGrid(item);
             }
         }
     }
     request.open('POST', '/comgrid/update.php?id=' + selected);
     request.send();
+}
+
+function removeNode(item) {
+    var question = '¿Estás completamente seguro de querer eliminar "' + item['title'] + '"';
+    if (item['items']) {
+        question += ' y sus ' + item['items'].length + ' opciones';
+    }
+    question += '?';
+    if (confirm(question)) {
+        var parent = document.querySelector('#parent').value;
+        var selected = encodeURIComponent(item['id']);
+        var request = new XMLHttpRequest();
+        request.onreadystatechange = function() {
+            if (request.readyState == 4 && request.status == 200) {
+                reloadGrid(parent);
+            }
+        }
+        request.open('POST', '/comgrid/update.php?remove=' + selected);
+        request.send();
+    }
 }
 
 function closeSelect() {
@@ -159,7 +252,6 @@ function closeSelect() {
     var concepto = document.querySelector('#concepto');
     concepto.value = ''
     document.querySelector('#select').classList.remove('active');
-        item.classList.remove('selected');
     var resultados = document.querySelector('#resultados');
     resultados.innerHTML = '';
     var body = document.querySelector('body');
@@ -177,7 +269,8 @@ function updateSelected(image) {
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (request.readyState == 4 && request.status == 200) {
-            location.reload(true);
+            reloadGrid(parentValue);
+            closeSelect();
         }
     }
     if (selected.value.length > 0) {

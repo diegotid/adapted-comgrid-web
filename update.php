@@ -3,6 +3,9 @@
 if (isset($_GET['id'])) {
     $id = urldecode($_GET['id']);
 }
+if (isset($_GET['remove'])) {
+    $remove= urldecode($_GET['remove']);
+}
 if (isset($_GET['parent'])) {
     $parent = urldecode($_GET['parent']);
 }
@@ -34,6 +37,31 @@ function findReplace($node) {
             }
         }
     }
+}
+
+function findRemove($node) {
+    global $remove;
+    $prefix = substr($remove, 0, strrpos($remove, '-'));
+    $new = [];
+    if (isset($node['items'])) {
+        $found = FALSE;
+        foreach ($node['items'] as $item) {
+            if ($item['id'] === $remove) {
+                $found = TRUE;
+            } else {
+                if ($found === TRUE) {
+                    $sufix = intval(substr($item['id'], strrpos($item['id'], '-') + 1));
+                    error_log('Reindexando: ' . $sufix);
+                    $item['id'] = $prefix . '-' . ($sufix - 1);
+                } else {
+                    $item = findRemove($item);
+                }
+                array_push($new, $item);
+            }
+        }
+        $node['items'] = $new;
+    }
+    return $node;
 }
 
 function findTreeUntree($node) {
@@ -84,6 +112,8 @@ if (isset($parent)) {
     $updated = findAdd($grid);
 } else if (isset($image)) {
     $updated = findReplace($grid);
+} else if (isset($remove)) {
+    $updated = findRemove($grid);
 } else {
     $updated = findTreeUntree($grid);
 }

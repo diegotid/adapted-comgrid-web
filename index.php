@@ -10,7 +10,7 @@
         <div id="control">
             <button id="cancel">Cancelar</button>
             <img src="tile.png"/>
-            <button id="add" disabled>A&ntilde;adir</button>
+            <button id="add">A&ntilde;adir</button>
         </div>
         <div id="select">
             <img src="close.png" id="close"/>
