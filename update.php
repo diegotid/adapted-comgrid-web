@@ -1,5 +1,8 @@
 <?php
 
+error_log(print_r($_FILES, TRUE));
+error_log($_POST['hash']);
+
 if (isset($_GET['id'])) {
     $id = urldecode($_GET['id']);
 }
@@ -25,7 +28,9 @@ function findReplace($node) {
     global $image;
     if ($node['id'] === $id) {
         $node['title'] = $voice;
-        $node['pic'] = $image;
+        if (isset($image)) {
+            $node['pic'] = $image;
+        }
         return $node;
     }
     if (isset($node['items'])) {
@@ -108,9 +113,14 @@ function findAdd($node) {
     }
 }
 
-if (isset($parent)) {
+if (isset($_FILES['pic']) > 0) {
+    $temp = $_FILES['pic']['tmp_name'];
+    $dest = 'pics/' . $_POST['hash'];
+    move_uploaded_file($temp, $dest);
+    $updated = FALSE;
+} else if (isset($parent)) {
     $updated = findAdd($grid);
-} else if (isset($image)) {
+} else if (isset($voice)) {
     $updated = findReplace($grid);
 } else if (isset($remove)) {
     $updated = findRemove($grid);

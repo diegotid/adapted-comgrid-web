@@ -1,6 +1,7 @@
 
 $admin-blue: #1f99c9;
 $selected-blue: #1f99c981;
+$selecting-background: #07202bea;
 
 body {
   margin: 0;
@@ -127,7 +128,7 @@ body {
   #select {
     display: none;
     position: fixed;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: $selecting-background;
     padding: 0;
     top: 0;
     right: 0;
@@ -147,11 +148,36 @@ body {
 
       input {
         width: calc(100% - 80px);
-        margin: 40px auto;
-        border: 3px solid grey;
+        margin: 40px auto 0 auto;
+        border: 3px solid $selected-blue;
         border-radius: 10px;
         font-size: 1.2em;
         padding: 10px 15px;
+      }
+
+      #title {
+        color: white;
+        font-size: 1.5em;
+        max-width: 300px;
+        position: fixed;
+        margin: auto;
+        top: 118px;
+        left: 0;
+        right: 0;
+      }
+
+      button {
+        color: white;
+        font-size: 1.2em;
+        padding: 10px 20px;
+        margin: 20px 170px 20px 0;
+        background-color: $selected-blue;
+        border: 3px solid $selected-blue;
+        border-radius: 10px;
+        
+        &#search {
+          margin: 20px 0 20px 170px;
+        }
       }
 
       ul {
@@ -164,20 +190,42 @@ body {
         li {
           float: left;
           margin: 0 20px 20px 0;
-          border: 3px solid grey;
+          border: 3px solid $selected-blue;
           border-radius: 10px;
           width: 150px;
           height: 150px;
           line-height: 150px;
           vertical-align: middle;
+          background-position: center center;
+          background-repeat: no-repeat;
           background-color: white;
+          background-size: cover;
           
           &.otros {
             text-align: center;
             font-size: 1.5em;
             cursor: pointer;
-            background-color: grey;
+            background-color: $selected-blue;
             color: white;
+          }
+
+          &.dropzone {
+            border-style: dashed;
+            background: none;
+
+            &.on {
+              background-color: $selected-blue;
+            }
+          }
+
+          &.footer {
+            width: 690px;
+            height: 90px;
+            border: none;
+            color: $admin-blue;
+            background: none;
+            font-size: 1.2em;
+            font-weight: 200;
           }
           
           img {

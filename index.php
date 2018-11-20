@@ -15,10 +15,13 @@
         <div id="select">
             <img src="close.png" id="close"/>
             <div>
-                <input type="text" id="concepto" placeholder="Buscar"/>
+                <input type="text" id="concepto" placeholder="Descripción de la imagen a buscar"/>
+                <div id="title"></div>
                 <input type="hidden" id="selected"/>
                 <input type="hidden" id="parent"/>
                 <img src="loading.gif" id="loading"/>
+                <button id="settitle">Cambiar título</button>
+                <button id="search">Buscar imagen</button>
                 <ul id="resultados"></ul>
             </div>
         </div>

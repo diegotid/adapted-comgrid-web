@@ -7,6 +7,17 @@ var apiURL = 'https://www.googleapis.com/customsearch/v1';
 var apiKey = 'AIzaSyCNPpm7l0ux6guKdP04mVtOKDc0ta7rlaI';
 var cseId = '000035554816196296110:duvthbrcfcm';
 
+function hashCode(string) {
+    var hash = 0, i, chr;
+    if (string.length === 0) return hash;
+    for (i = 0; i < string.length; i++) {
+      chr = string.charCodeAt(i);
+      hash = ((hash << 5) - hash) + chr;
+      hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+};
+
 function setupGrid(url) {
     gridURL = url;
     if (!gridJSON) {
@@ -68,9 +79,6 @@ function fillGrid(json, page) {
     if (!page) page = 1;
     var path = json['id'].split('-');
     path.pop();
-    console.log('Page: ' + page);
-    console.log('Items length: ' + json['items'].length);
-    console.log('Path length: ' + path.length);
     document.querySelector('#parent').value = json['id'];
     var grid = document.querySelector('.grid');
     grid.innerHTML = '';
@@ -187,6 +195,13 @@ function setupSelect() {
             selectSearch();
         }
     });
+    document.querySelector('#search').addEventListener('click', function() {
+        selectSearch();
+    });
+    document.querySelector('#settitle').addEventListener('click', function() {
+        document.querySelector('#title').innerText = document.querySelector('#concepto').value;
+        updateTitle();
+    });
     var close = document.querySelector('#close');
     close.addEventListener('click', closeSelect);
     document.addEventListener('keypress', function(e) {
@@ -197,9 +212,21 @@ function setupSelect() {
     });
 }
 
+function updateTitle() {
+    var title = document.querySelector('#title');
+    var selected = document.querySelector('#selected');
+    var concepto = document.querySelector('#concepto');
+    selectedValue = encodeURIComponent(selected.value);
+    conceptoValue = encodeURIComponent(title.innerText.length > 0 ? title.innerText : concepto.value);
+    var request = new XMLHttpRequest();
+    request.open('POST', '/comgrid/update.php?id=' + selectedValue + '&voice=' + conceptoValue);
+    request.send();
+}
+
 function showSelectPic(item) {
     document.querySelector('#' + item['id']).classList.add('selected');
     document.querySelector('#select').classList.add('active');
+    document.querySelector('#title').innerText = item['title'];
     document.querySelector('#concepto').value = item['title'];
     document.querySelector('#selected').value = item['id'];
     selectSearch();
@@ -249,8 +276,8 @@ function closeSelect() {
     items.forEach(function(item) {
         item.classList.remove('selected');
     });
-    var concepto = document.querySelector('#concepto');
-    concepto.value = ''
+    document.querySelector('#concepto').value = '';
+    document.querySelector('#title').innerText = '';
     document.querySelector('#select').classList.remove('active');
     var resultados = document.querySelector('#resultados');
     resultados.innerHTML = '';
@@ -259,13 +286,14 @@ function closeSelect() {
 }
 
 function updateSelected(image) {
+    image = encodeURIComponent(image);
+    var title = document.querySelector('#title');
     var parent = document.querySelector('#parent');
     var selected = document.querySelector('#selected');
     var concepto = document.querySelector('#concepto');
     parentValue = encodeURIComponent(parent.value);
     selectedValue = encodeURIComponent(selected.value);
-    conceptoValue = encodeURIComponent(concepto.value);
-    image = encodeURIComponent(image['link']);
+    conceptoValue = encodeURIComponent(title.innerText.length > 0 ? title.innerText : concepto.value);
     var request = new XMLHttpRequest();
     request.onreadystatechange = function() {
         if (request.readyState == 4 && request.status == 200) {
@@ -298,24 +326,45 @@ function selectSearch(desde) {
                 }
                 response['items'].forEach(function(imagen) {
                     var elemento = document.createElement('li');
-                    var img = document.createElement('img');
-                    img.src = imagen['image']['thumbnailLink'];
-                    elemento.appendChild(img);
+                    elemento.style.backgroundImage = 'url(' + imagen['image']['thumbnailLink'] + ')';
                     resultados.appendChild(elemento);
                     elemento.addEventListener('click', function() {
-                        updateSelected(imagen);
+                        updateSelected(imagen['link']);
                     });
                 });
+                var dropzone = document.createElement('li');
+                var footer = document.createElement('li');
                 if (!desde || desde < 100) {
                     var elemento = document.createElement('li');
                     elemento.classList.add('otros');
                     elemento.innerHTML = 'Otros';
                     elemento.addEventListener('click', function() {
                         resultados.removeChild(elemento);
+                        resultados.removeChild(dropzone);
+                        resultados.removeChild(footer);
                         selectSearch(desde ? desde + 10 : 10);
                     });
                     resultados.appendChild(elemento);
                 }
+                dropzone.classList.add('dropzone');
+                resultados.appendChild(dropzone);
+                dropzone.ondragover = dropzone.ondragenter = function(e) {
+                    e.preventDefault();
+                    dropzone.classList.add('on');
+                }
+                dropzone.ondragexit = function(e) {
+                    e.preventDefault();
+                    dropzone.classList.remove('on');
+                }
+                dropzone.ondrop = function(e) {
+                    e.preventDefault();
+                    dropzone.classList.remove('on');
+                    readFile(e.dataTransfer.files[0]);
+                    uploadFile(e.dataTransfer.files[0]);
+                }
+                footer.classList.add('footer');
+                footer.innerText = "Puedes asignar una imagen de tu equipo arrastrándola sobre el cuadrado punteado";
+                resultados.appendChild(footer);
             }
         }
     }
@@ -327,4 +376,51 @@ function selectSearch(desde) {
     }
     request.open('GET', url + '&q=' + concepto.value);
     request.send();
+}
+
+function picHashCode(file) {
+
+    return file.lastModified + '.' + hashCode(file.name) + '.' + file.name.split('.').pop();
+}
+
+function uploadFile(file) {
+    var form = new FormData();
+    form.append('pic', file);
+    form.append('hash', picHashCode(file));
+    var request = new XMLHttpRequest();
+    request.open('POST', '/comgrid/update.php');
+    request.overrideMimeType(file.type);
+    request.send(form);
+}
+
+function readFile(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var dropzone = document.querySelector('li.dropzone');
+        dropzone.style.backgroundImage = 'url(' + e.target.result + ')';
+        dropzone.classList.remove('dropzone');
+        dropzone.parentNode.insertBefore(dropzone, dropzone.previousSibling);
+        dropzone.addEventListener('click', function() {
+            updateSelected('http://' + window.location.hostname + '/comgrid/pics/' + picHashCode(file));
+        });
+        var newzone = document.createElement('li');
+        newzone.classList.add('dropzone');
+        dropzone.parentNode.appendChild(newzone);
+        dropzone.parentNode.insertBefore(newzone, newzone.previousSibling);
+        newzone.ondragover = newzone.ondragenter = function(e) {
+            e.preventDefault();
+            newzone.classList.add('on');
+        }
+        newzone.ondragexit = function(e) {
+            e.preventDefault();
+            newzone.classList.remove('on');
+        }
+        newzone.ondrop = function(e) {
+            e.preventDefault();
+            newzone.classList.remove('on');
+            readFile(e.dataTransfer.files[0]);
+            uploadFile(e.dataTransfer.files[0]);
+        }
+    }
+    reader.readAsDataURL(file);
 }
