@@ -55,7 +55,7 @@ function reloadGrid(node) {
             }
         }
     }
-    request.open('GET', gridURL);
+    request.open('GET', gridURL + '?' + (new Date().getTime()));
     request.send();
 }
 
@@ -362,8 +362,15 @@ function selectSearch(desde) {
                     readFile(e.dataTransfer.files[0]);
                     uploadFile(e.dataTransfer.files[0]);
                 }
+                var imagen = document.querySelector('#imagen');
+                dropzone.addEventListener('click', selectFromDevice);
+                imagen.onchange = function(e) {
+                    dropzone.classList.remove('on');
+                    readFile(e.target.files[0]);
+                    uploadFile(e.target.files[0]);
+                }
                 footer.classList.add('footer');
-                footer.innerText = "Puedes asignar una imagen de tu equipo arrastrándola sobre el cuadrado punteado";
+                footer.innerText = "Puedes asignar una imagen de tu equipo haciendo click en el cuadrado punteado o arrastrándola sobre él";
                 resultados.appendChild(footer);
             }
         }
@@ -378,8 +385,13 @@ function selectSearch(desde) {
     request.send();
 }
 
-function picHashCode(file) {
+function selectFromDevice() {
+    var imagen = document.querySelector('#imagen');
+    document.querySelector('.dropzone').classList.add('on');
+    imagen.click();
+}
 
+function picHashCode(file) {
     return file.lastModified + '.' + hashCode(file.name) + '.' + file.name.split('.').pop();
 }
 
@@ -396,31 +408,36 @@ function uploadFile(file) {
 function readFile(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
-        var dropzone = document.querySelector('li.dropzone');
-        dropzone.style.backgroundImage = 'url(' + e.target.result + ')';
-        dropzone.classList.remove('dropzone');
-        dropzone.parentNode.insertBefore(dropzone, dropzone.previousSibling);
-        dropzone.addEventListener('click', function() {
-            updateSelected('http://' + window.location.hostname + '/comgrid/pics/' + picHashCode(file));
-        });
-        var newzone = document.createElement('li');
-        newzone.classList.add('dropzone');
-        dropzone.parentNode.appendChild(newzone);
-        dropzone.parentNode.insertBefore(newzone, newzone.previousSibling);
-        newzone.ondragover = newzone.ondragenter = function(e) {
-            e.preventDefault();
-            newzone.classList.add('on');
-        }
-        newzone.ondragexit = function(e) {
-            e.preventDefault();
-            newzone.classList.remove('on');
-        }
-        newzone.ondrop = function(e) {
-            e.preventDefault();
-            newzone.classList.remove('on');
-            readFile(e.dataTransfer.files[0]);
-            uploadFile(e.dataTransfer.files[0]);
-        }
+        addImage(e.target.result, file);
     }
     reader.readAsDataURL(file);
+}
+
+function addImage(data, file) {
+    var dropzone = document.querySelector('li.dropzone');
+    dropzone.style.backgroundImage = 'url(' + data + ')';
+    dropzone.classList.remove('dropzone');
+    dropzone.parentNode.insertBefore(dropzone, dropzone.previousSibling);
+    dropzone.removeEventListener('click', selectFromDevice);
+    dropzone.addEventListener('click', function() {
+        updateSelected('http://' + window.location.hostname + '/comgrid/pics/' + picHashCode(file));
+    });
+    var newzone = document.createElement('li');
+    newzone.classList.add('dropzone');
+    dropzone.parentNode.appendChild(newzone);
+    dropzone.parentNode.insertBefore(newzone, newzone.previousSibling);
+    newzone.ondragover = newzone.ondragenter = function(e) {
+        e.preventDefault();
+        newzone.classList.add('on');
+    }
+    newzone.ondragexit = function(e) {
+        e.preventDefault();
+        newzone.classList.remove('on');
+    }
+    newzone.ondrop = function(e) {
+        e.preventDefault();
+        newzone.classList.remove('on');
+        readFile(e.dataTransfer.files[0]);
+        uploadFile(e.dataTransfer.files[0]);
+    }
 }

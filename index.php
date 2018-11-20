@@ -16,6 +16,7 @@
             <img src="close.png" id="close"/>
             <div>
                 <input type="text" id="concepto" placeholder="Descripción de la imagen a buscar"/>
+                <input type="file" id="imagen"/>
                 <div id="title"></div>
                 <input type="hidden" id="selected"/>
                 <input type="hidden" id="parent"/>
